@@ -1,10 +1,22 @@
 import * as SQLite from 'expo-sqlite';
 import { STARTUP_TIMEOUT_MS, withTimeout } from './startup';
 
-export type QueuedUpc = {
+export type CdLibraryItem = {
   upc: string;
+  artist: string | null;
+  album_title: string | null;
+  format: string;
+  notes: string | null;
   first_scanned_at: string;
   last_scanned_at: string;
+};
+
+export type CdLibraryUpdate = {
+  upc: string;
+  artist: string;
+  albumTitle: string;
+  format: string;
+  notes: string;
 };
 
 export type AuthSession = {
@@ -37,16 +49,28 @@ export async function ensureSchema() {
       first_scanned_at TEXT NOT NULL,
       last_scanned_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS cd_library (
+      upc TEXT PRIMARY KEY,
+      artist TEXT,
+      album_title TEXT,
+      format TEXT NOT NULL DEFAULT 'CD',
+      notes TEXT,
+      first_scanned_at TEXT NOT NULL,
+      last_scanned_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS auth_session (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       email TEXT NOT NULL,
       name TEXT NOT NULL,
       signed_in_at TEXT NOT NULL
     );
+    INSERT OR IGNORE INTO cd_library (upc, first_scanned_at, last_scanned_at)
+    SELECT upc, first_scanned_at, last_scanned_at
+    FROM upc_queue;
   `);
 }
 
-export async function upsertUpc(upcRaw: string) {
+export async function upsertScannedCd(upcRaw: string) {
   const upc = upcRaw.trim();
   if (!upc) return;
 
@@ -54,27 +78,62 @@ export async function upsertUpc(upcRaw: string) {
   const now = new Date().toISOString();
 
   await db.runAsync(
-    `INSERT INTO upc_queue (upc, first_scanned_at, last_scanned_at)
+    `INSERT INTO cd_library (upc, first_scanned_at, last_scanned_at)
      VALUES (?, ?, ?)
      ON CONFLICT(upc) DO UPDATE SET last_scanned_at = excluded.last_scanned_at;`,
     [upc, now, now]
   );
 }
 
-export async function listQueuedUpcs(): Promise<QueuedUpc[]> {
+export async function createManualCd(): Promise<CdLibraryItem> {
   const db = await getDb();
-  const rows = await db.getAllAsync<QueuedUpc>(
-    `SELECT upc, first_scanned_at, last_scanned_at
-     FROM upc_queue
-     ORDER BY upc ASC;`
+  const now = new Date().toISOString();
+  const upc = `manual-${Date.now()}`;
+
+  await db.runAsync(
+    `INSERT INTO cd_library (upc, format, first_scanned_at, last_scanned_at)
+     VALUES (?, 'CD', ?, ?);`,
+    [upc, now, now]
+  );
+
+  return {
+    upc,
+    artist: null,
+    album_title: null,
+    format: 'CD',
+    notes: null,
+    first_scanned_at: now,
+    last_scanned_at: now,
+  };
+}
+
+export async function updateCdDetails(update: CdLibraryUpdate) {
+  const db = await getDb();
+  await db.runAsync(
+    `UPDATE cd_library
+     SET artist = NULLIF(TRIM(?), ''),
+         album_title = NULLIF(TRIM(?), ''),
+         format = COALESCE(NULLIF(TRIM(?), ''), 'CD'),
+         notes = NULLIF(TRIM(?), '')
+     WHERE upc = ?;`,
+    [update.artist, update.albumTitle, update.format, update.notes, update.upc]
+  );
+}
+
+export async function listCdLibraryItems(): Promise<CdLibraryItem[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<CdLibraryItem>(
+    `SELECT upc, artist, album_title, format, notes, first_scanned_at, last_scanned_at
+     FROM cd_library
+     ORDER BY COALESCE(NULLIF(album_title, ''), upc) COLLATE NOCASE ASC;`
   );
   return rows;
 }
 
-export async function countQueuedUpcs(): Promise<number> {
+export async function countCdLibraryItems(): Promise<number> {
   const db = await getDb();
   const row = await db.getFirstAsync<{ count: number }>(
-    `SELECT COUNT(*) as count FROM upc_queue;`
+    `SELECT COUNT(*) as count FROM cd_library;`
   );
   return row?.count ?? 0;
 }

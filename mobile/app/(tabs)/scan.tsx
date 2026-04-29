@@ -4,7 +4,7 @@ import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-ca
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
-import { countQueuedUpcs, ensureSchema, upsertUpc } from '../../src/db';
+import { countCdLibraryItems, ensureSchema, upsertScannedCd } from '../../src/db';
 
 type ScanStatus =
   | { kind: 'idle' }
@@ -17,14 +17,14 @@ export default function ScanScreen() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [status, setStatus] = useState<ScanStatus>({ kind: 'idle' });
-  const [queuedCount, setQueuedCount] = useState<number>(0);
+  const [libraryCount, setLibraryCount] = useState<number>(0);
   const lastUpcRef = useRef<string | null>(null);
   const toastTimerRef = useRef<any>(null);
 
   useEffect(() => {
     ensureSchema()
-      .then(() => countQueuedUpcs())
-      .then(setQueuedCount)
+      .then(() => countCdLibraryItems())
+      .then(setLibraryCount)
       .catch(() => {
         // ignore; will surface on save
       });
@@ -54,9 +54,9 @@ export default function ScanScreen() {
 
     try {
       setStatus({ kind: 'saving', upc: raw });
-      await upsertUpc(raw);
-      const newCount = await countQueuedUpcs();
-      setQueuedCount(newCount);
+      await upsertScannedCd(raw);
+      const newCount = await countCdLibraryItems();
+      setLibraryCount(newCount);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       showSavedToast(raw);
     } catch (e: any) {
@@ -89,7 +89,7 @@ export default function ScanScreen() {
 
           <View style={styles.overlay}>
             <View style={styles.topBar}>
-              <Text style={styles.title}>Scan CDs · Saved: {queuedCount}</Text>
+              <Text style={styles.title}>Scan CDs · In library: {libraryCount}</Text>
               <View style={styles.topBarButtons}>
                 <Pressable
                   onPress={() => {

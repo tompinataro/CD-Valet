@@ -1,4 +1,4 @@
-export const STARTUP_TIMEOUT_MS = 3000;
+export const STARTUP_TIMEOUT_MS = 10000;
 
 export async function withTimeout<T>(
   promise: Promise<T>,

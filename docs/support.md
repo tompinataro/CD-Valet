@@ -18,12 +18,12 @@ Account & Data Deletion Requests
 Quick Checks
 - App Version: Ensure you’re on the latest build
 - Camera Access: If scanning is not working, confirm camera permission is enabled for CD Valet in device settings
-- Library Refresh: If a scan does not appear right away, open the Library tab and tap Refresh
+- Library Refresh: If a scan or manual CD does not appear right away, open the Library tab and tap Refresh
 
 Common Topics
 - Profiles: Saving a local profile is optional. Any user can open the app, scan CDs, and build a personal library immediately.
 - Scanning UPCs: Use the Scan tab to capture CD UPCs in batches; if codes stop saving, tap Reset and scan again
-- Library Queue: The Library tab shows queued UPCs saved on the device; tap Refresh to reload the list
+- Library Editing: The Library tab shows saved CDs. Tap a row to add album, artist, format, and notes.
 - Camera Permission: The app requests camera access only when you choose to scan; you can re-enable it later in device settings
 
 Links

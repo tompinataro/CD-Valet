@@ -34,7 +34,7 @@ export default function IndexScreen() {
 
           <Link href="/(tabs)/library" asChild>
             <Pressable style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>Open empty library</Text>
+              <Text style={styles.secondaryButtonText}>Open library</Text>
             </Pressable>
           </Link>
 

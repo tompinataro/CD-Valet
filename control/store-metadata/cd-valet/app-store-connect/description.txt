@@ -1,3 +1,7 @@
-A Tixpy app — built for fast, reliable workflows with a clean, focused UI.
+CD Valet helps music collectors build a personal CD library with quick barcode scanning, manual entry, and simple local album notes.
 
-Support: support@tixpy.com
+Scan UPCs when you have the case in hand, or add a CD manually when a barcode is missing. Each saved item can hold album title, artist, format, and notes, so your collection stays easy to review later.
+
+CD Valet is local-first and works without requiring an account.
+
+Support: TixPy@pinataro.com

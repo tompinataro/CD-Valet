@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
-import { ensureSchema, listQueuedUpcs, type QueuedUpc } from '../db';
+import { ensureSchema, listCdLibraryItems, type CdLibraryItem } from '../db';
 import { STARTUP_TIMEOUT_MS, toUserMessage, withTimeout } from '../startup';
 
-export function useQueuedUpcs() {
-  const [items, setItems] = useState<QueuedUpc[]>([]);
+export function useCdLibrary() {
+  const [items, setItems] = useState<CdLibraryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,7 +13,7 @@ export function useQueuedUpcs() {
       setError(null);
       setLoading(true);
       await withTimeout(ensureSchema(), STARTUP_TIMEOUT_MS, 'Preparing local library');
-      const rows = await withTimeout(listQueuedUpcs(), STARTUP_TIMEOUT_MS, 'Loading saved CDs');
+      const rows = await withTimeout(listCdLibraryItems(), STARTUP_TIMEOUT_MS, 'Loading saved CDs');
       setItems(rows);
     } catch (error) {
       setItems([]);
