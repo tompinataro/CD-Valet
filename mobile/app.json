@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "CD Valet",
+    "slug": "cd-valet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#5f162d"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tixpy.cdvalet",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "CD Valet uses the camera to scan CD UPC barcodes so you can add albums to your personal music library, for example while cataloging your collection at home.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#5f162d"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.tixpy.cdvalet",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "owner": "pinataro",
+    "scheme": "cdvalet",
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-font"
+    ]
+  }
+}

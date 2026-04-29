@@ -1,0 +1,14 @@
+{
+  "slug": "cd-valet",
+  "displayName": "CD Valet",
+  "repoPath": "/Users/tompinataro/My Projects/CD-Valet",
+  "bundleId": "com.tixpy.cdvalet",
+  "appleAppId": "",
+  "googlePlayPackage": "com.tixpy.cdvalet",
+  "links": {
+    "appStore": "",
+    "googlePlay": ""
+  },
+  "generatedAt": "2026-03-17T14:22:53.816Z",
+  "outDir": "/Users/tompinataro/My Projects/Canopi/control/store-metadata/apps/cd-valet/out"
+}
