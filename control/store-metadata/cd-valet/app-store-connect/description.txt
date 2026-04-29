@@ -1,6 +1,8 @@
-CD Valet helps music collectors build a personal CD library with quick barcode scanning, manual entry, and simple local album notes.
+CD Valet helps music collectors build a personal CD library with quick barcode scanning, automatic album lookup, manual entry, and simple local notes.
 
-Scan UPCs when you have the case in hand, or add a CD manually when a barcode is missing. Each saved item can hold album title, artist, format, and notes, so your collection stays easy to review later.
+Scan UPCs when you have the case in hand, and CD Valet can look up matching album details such as artist, title, release year, label, catalog number, and track count. You can also add a CD manually when a barcode is missing.
+
+Each saved item can hold album title, artist, format, release details, and notes, so your collection stays easy to review later. Search and sort tools help you find albums quickly and spot entries that still need details.
 
 CD Valet is local-first and works without requiring an account.
 

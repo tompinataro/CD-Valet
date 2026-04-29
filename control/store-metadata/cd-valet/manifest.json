@@ -7,7 +7,9 @@
   "googlePlayPackage": "com.tixpy.cdvalet",
   "links": {
     "appStore": "",
-    "googlePlay": ""
+    "googlePlay": "",
+    "privacyPolicy": "https://tompinataro.github.io/CD-Valet/privacy/",
+    "support": "https://tompinataro.github.io/CD-Valet/support/"
   },
   "generatedAt": "2026-03-17T14:22:53.816Z",
   "outDir": "/Users/tompinataro/My Projects/Canopi/control/store-metadata/apps/cd-valet/out"

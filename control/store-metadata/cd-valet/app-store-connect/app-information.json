@@ -1,0 +1,33 @@
+{
+  "name": "CD Valet",
+  "bundleId": "com.tixpy.cdvalet",
+  "sku": "cd-valet-ios-1",
+  "version": "1.0.0",
+  "primaryLanguage": "en-US",
+  "primaryCategory": "Reference",
+  "secondaryCategory": "Music",
+  "ageRating": "4+",
+  "copyright": "2026 Tixpy LLC",
+  "supportUrl": "https://tompinataro.github.io/CD-Valet/support/",
+  "privacyPolicyUrl": "https://tompinataro.github.io/CD-Valet/privacy/",
+  "marketingUrl": "",
+  "userPrivacyChoicesUrl": "",
+  "signInRequired": false,
+  "demoAccountRequired": false,
+  "reviewContactEmail": "TixPy@pinataro.com",
+  "usesTracking": false,
+  "usesIdfa": false,
+  "exportCompliance": {
+    "usesNonExemptEncryption": false,
+    "notes": "Uses standard platform encryption/HTTPS only."
+  },
+  "screenshots": {
+    "iphone6_9": "screenshots/iphone-6.9",
+    "ipad13": "screenshots/ipad-13"
+  },
+  "submissionStatus": {
+    "iosBuildUploadedToAsc": false,
+    "metadataPrepared": true,
+    "publicUrlsNeedVerificationBeforeSubmit": true
+  }
+}

@@ -1,0 +1,11 @@
+CD Valet does not require login or a demo account.
+
+Core review flow:
+1. Launch the app.
+2. Open Library and use Add CD to create a manual entry without camera permission.
+3. Open Scan to review the camera permission prompt and scanner UI. Camera access is used only for CD UPC barcode scanning.
+4. If a UPC is scanned, the app may query MusicBrainz for public album metadata and then stores the result locally on the device.
+
+The optional profile screen stores a local-only profile email on the device and is not required for app functionality.
+
+Support contact: TixPy@pinataro.com
