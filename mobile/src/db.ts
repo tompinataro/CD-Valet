@@ -6,6 +6,13 @@ export type CdLibraryItem = {
   artist: string | null;
   album_title: string | null;
   format: string;
+  release_year: string | null;
+  label: string | null;
+  catalog_number: string | null;
+  track_count: number | null;
+  musicbrainz_id: string | null;
+  lookup_status: string;
+  lookup_source: string | null;
   notes: string | null;
   first_scanned_at: string;
   last_scanned_at: string;
@@ -16,7 +23,25 @@ export type CdLibraryUpdate = {
   artist: string;
   albumTitle: string;
   format: string;
+  releaseYear: string;
+  label: string;
+  catalogNumber: string;
+  trackCount: string;
   notes: string;
+};
+
+export type CdMetadataUpdate = {
+  upc: string;
+  artist?: string | null;
+  albumTitle?: string | null;
+  format?: string | null;
+  releaseYear?: string | null;
+  label?: string | null;
+  catalogNumber?: string | null;
+  trackCount?: number | null;
+  musicBrainzId?: string | null;
+  lookupStatus: 'found' | 'not_found' | 'error' | 'manual';
+  lookupSource?: string | null;
 };
 
 export type AuthSession = {
@@ -54,6 +79,13 @@ export async function ensureSchema() {
       artist TEXT,
       album_title TEXT,
       format TEXT NOT NULL DEFAULT 'CD',
+      release_year TEXT,
+      label TEXT,
+      catalog_number TEXT,
+      track_count INTEGER,
+      musicbrainz_id TEXT,
+      lookup_status TEXT NOT NULL DEFAULT 'manual',
+      lookup_source TEXT,
       notes TEXT,
       first_scanned_at TEXT NOT NULL,
       last_scanned_at TEXT NOT NULL
@@ -68,6 +100,27 @@ export async function ensureSchema() {
     SELECT upc, first_scanned_at, last_scanned_at
     FROM upc_queue;
   `);
+  await ensureCdLibraryColumns(db);
+}
+
+async function ensureCdLibraryColumns(db: SQLite.SQLiteDatabase) {
+  const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(cd_library);`);
+  const existing = new Set(columns.map((column) => column.name));
+  const migrations = [
+    ['release_year', `ALTER TABLE cd_library ADD COLUMN release_year TEXT;`],
+    ['label', `ALTER TABLE cd_library ADD COLUMN label TEXT;`],
+    ['catalog_number', `ALTER TABLE cd_library ADD COLUMN catalog_number TEXT;`],
+    ['track_count', `ALTER TABLE cd_library ADD COLUMN track_count INTEGER;`],
+    ['musicbrainz_id', `ALTER TABLE cd_library ADD COLUMN musicbrainz_id TEXT;`],
+    ['lookup_status', `ALTER TABLE cd_library ADD COLUMN lookup_status TEXT NOT NULL DEFAULT 'manual';`],
+    ['lookup_source', `ALTER TABLE cd_library ADD COLUMN lookup_source TEXT;`],
+  ] as const;
+
+  for (const [name, sql] of migrations) {
+    if (!existing.has(name)) {
+      await db.execAsync(sql);
+    }
+  }
 }
 
 export async function upsertScannedCd(upcRaw: string) {
@@ -78,9 +131,14 @@ export async function upsertScannedCd(upcRaw: string) {
   const now = new Date().toISOString();
 
   await db.runAsync(
-    `INSERT INTO cd_library (upc, first_scanned_at, last_scanned_at)
-     VALUES (?, ?, ?)
-     ON CONFLICT(upc) DO UPDATE SET last_scanned_at = excluded.last_scanned_at;`,
+    `INSERT INTO cd_library (upc, lookup_status, first_scanned_at, last_scanned_at)
+     VALUES (?, 'pending', ?, ?)
+     ON CONFLICT(upc) DO UPDATE SET
+       last_scanned_at = excluded.last_scanned_at,
+       lookup_status = CASE
+         WHEN cd_library.lookup_status = 'found' THEN cd_library.lookup_status
+         ELSE 'pending'
+       END;`,
     [upc, now, now]
   );
 }
@@ -91,8 +149,8 @@ export async function createManualCd(): Promise<CdLibraryItem> {
   const upc = `manual-${Date.now()}`;
 
   await db.runAsync(
-    `INSERT INTO cd_library (upc, format, first_scanned_at, last_scanned_at)
-     VALUES (?, 'CD', ?, ?);`,
+    `INSERT INTO cd_library (upc, format, lookup_status, first_scanned_at, last_scanned_at)
+     VALUES (?, 'CD', 'manual', ?, ?);`,
     [upc, now, now]
   );
 
@@ -101,6 +159,13 @@ export async function createManualCd(): Promise<CdLibraryItem> {
     artist: null,
     album_title: null,
     format: 'CD',
+    release_year: null,
+    label: null,
+    catalog_number: null,
+    track_count: null,
+    musicbrainz_id: null,
+    lookup_status: 'manual',
+    lookup_source: null,
     notes: null,
     first_scanned_at: now,
     last_scanned_at: now,
@@ -114,16 +179,64 @@ export async function updateCdDetails(update: CdLibraryUpdate) {
      SET artist = NULLIF(TRIM(?), ''),
          album_title = NULLIF(TRIM(?), ''),
          format = COALESCE(NULLIF(TRIM(?), ''), 'CD'),
+         release_year = NULLIF(TRIM(?), ''),
+         label = NULLIF(TRIM(?), ''),
+         catalog_number = NULLIF(TRIM(?), ''),
+         track_count = CAST(NULLIF(TRIM(?), '') AS INTEGER),
+         lookup_status = CASE WHEN lookup_status = 'found' THEN lookup_status ELSE 'manual' END,
          notes = NULLIF(TRIM(?), '')
      WHERE upc = ?;`,
-    [update.artist, update.albumTitle, update.format, update.notes, update.upc]
+    [
+      update.artist,
+      update.albumTitle,
+      update.format,
+      update.releaseYear,
+      update.label,
+      update.catalogNumber,
+      update.trackCount,
+      update.notes,
+      update.upc,
+    ]
+  );
+}
+
+export async function updateCdMetadata(update: CdMetadataUpdate) {
+  const db = await getDb();
+  await db.runAsync(
+    `UPDATE cd_library
+     SET artist = COALESCE(NULLIF(TRIM(?), ''), artist),
+         album_title = COALESCE(NULLIF(TRIM(?), ''), album_title),
+         format = COALESCE(NULLIF(TRIM(?), ''), format, 'CD'),
+         release_year = COALESCE(NULLIF(TRIM(?), ''), release_year),
+         label = COALESCE(NULLIF(TRIM(?), ''), label),
+         catalog_number = COALESCE(NULLIF(TRIM(?), ''), catalog_number),
+         track_count = COALESCE(?, track_count),
+         musicbrainz_id = COALESCE(NULLIF(TRIM(?), ''), musicbrainz_id),
+         lookup_status = ?,
+         lookup_source = COALESCE(NULLIF(TRIM(?), ''), lookup_source)
+     WHERE upc = ?;`,
+    [
+      update.artist ?? '',
+      update.albumTitle ?? '',
+      update.format ?? '',
+      update.releaseYear ?? '',
+      update.label ?? '',
+      update.catalogNumber ?? '',
+      update.trackCount ?? null,
+      update.musicBrainzId ?? '',
+      update.lookupStatus,
+      update.lookupSource ?? '',
+      update.upc,
+    ]
   );
 }
 
 export async function listCdLibraryItems(): Promise<CdLibraryItem[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<CdLibraryItem>(
-    `SELECT upc, artist, album_title, format, notes, first_scanned_at, last_scanned_at
+    `SELECT upc, artist, album_title, format, release_year, label, catalog_number,
+            track_count, musicbrainz_id, lookup_status, lookup_source, notes,
+            first_scanned_at, last_scanned_at
      FROM cd_library
      ORDER BY COALESCE(NULLIF(album_title, ''), upc) COLLATE NOCASE ASC;`
   );

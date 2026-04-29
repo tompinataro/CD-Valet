@@ -4,13 +4,15 @@ import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-ca
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
-import { countCdLibraryItems, ensureSchema, upsertScannedCd } from '../../src/db';
+import { countCdLibraryItems, ensureSchema, updateCdMetadata, upsertScannedCd } from '../../src/db';
+import { lookupCdByBarcode } from '../../src/musicbrainz';
 
 type ScanStatus =
   | { kind: 'idle' }
   | { kind: 'scanning' }
   | { kind: 'saving'; upc: string }
-  | { kind: 'saved'; upc: string }
+  | { kind: 'lookingUp'; upc: string }
+  | { kind: 'saved'; upc: string; title?: string | null; artist?: string | null; lookup: 'found' | 'not_found' | 'error' }
   | { kind: 'error'; message: string };
 
 export default function ScanScreen() {
@@ -34,12 +36,12 @@ export default function ScanScreen() {
     return status.kind === 'scanning' || status.kind === 'idle' || status.kind === 'saved';
   }, [status.kind]);
 
-  function showSavedToast(upc: string) {
+  function showSavedToast(status: Extract<ScanStatus, { kind: 'saved' }>) {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setStatus({ kind: 'saved', upc });
+    setStatus(status);
     toastTimerRef.current = setTimeout(() => {
       setStatus({ kind: 'scanning' });
-    }, 900);
+    }, 1700);
   }
 
   async function handleBarcodeScanned(result: BarcodeScanningResult) {
@@ -55,10 +57,34 @@ export default function ScanScreen() {
     try {
       setStatus({ kind: 'saving', upc: raw });
       await upsertScannedCd(raw);
+
+      setStatus({ kind: 'lookingUp', upc: raw });
+      const lookup = await lookupCdByBarcode(raw);
+      if (lookup.kind === 'found') {
+        await updateCdMetadata({
+          upc: raw,
+          ...lookup.metadata,
+          lookupStatus: 'found',
+          lookupSource: 'MusicBrainz',
+        });
+      } else {
+        await updateCdMetadata({
+          upc: raw,
+          lookupStatus: lookup.kind === 'not_found' ? 'not_found' : 'error',
+          lookupSource: 'MusicBrainz',
+        });
+      }
+
       const newCount = await countCdLibraryItems();
       setLibraryCount(newCount);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      showSavedToast(raw);
+      showSavedToast({
+        kind: 'saved',
+        upc: raw,
+        lookup: lookup.kind,
+        title: lookup.kind === 'found' ? lookup.metadata.albumTitle : null,
+        artist: lookup.kind === 'found' ? lookup.metadata.artist : null,
+      });
     } catch (e: any) {
       setStatus({ kind: 'error', message: String(e?.message || e) });
     }
@@ -116,12 +142,18 @@ export default function ScanScreen() {
             <View style={styles.toastArea}>
               {status.kind === 'saved' ? (
                 <View style={styles.toast}>
-                  <Text style={styles.toastText}>Saved: {status.upc}</Text>
+                  <Text style={styles.toastText}>
+                    {status.lookup === 'found'
+                      ? `Found: ${status.title || status.upc}${status.artist ? ` · ${status.artist}` : ''}`
+                      : status.lookup === 'not_found'
+                        ? `Saved: ${status.upc} · details needed`
+                        : `Saved: ${status.upc} · lookup retry later`}
+                  </Text>
                 </View>
               ) : null}
-              {status.kind === 'saving' ? (
+              {status.kind === 'saving' || status.kind === 'lookingUp' ? (
                 <View style={styles.toastMuted}>
-                  <Text style={styles.toastText}>Saving…</Text>
+                  <Text style={styles.toastText}>{status.kind === 'saving' ? 'Saving...' : 'Looking up album...'}</Text>
                 </View>
               ) : null}
               {status.kind === 'error' ? (
