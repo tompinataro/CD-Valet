@@ -1,6 +1,6 @@
 # CD Valet App Privacy Answers
 
-Use these answers in App Store Connect App Privacy for the MVP build.
+These are the App Store Connect App Privacy answers used for the MVP review submission.
 
 ## Tracking
 - Does this app use data for tracking? No.
@@ -10,15 +10,14 @@ Use these answers in App Store Connect App Privacy for the MVP build.
 ## Data Collection Summary
 - Local library data, manual notes, and optional local profile email are stored on device.
 - Camera access is used only to scan CD UPC barcodes.
-- Scanned UPC/barcode values may be sent to MusicBrainz to retrieve public album metadata.
+- Scanned UPC/barcode values may be sent to MusicBrainz only as transient, real-time lookup requests to retrieve public album metadata.
 - CD Valet does not maintain a TixPy cloud account or hosted library database for the MVP.
 
 ## App Privacy Data Types
-- User Content / Other User Content: Yes, only for UPC/barcode lookup requests sent to MusicBrainz.
-  - Purpose: App Functionality.
-  - Linked to user: No.
-  - Used for tracking: No.
-- Contact Info / Email Address: No, for App Privacy nutrition label purposes, because the optional profile email is stored locally on device and is not collected by TixPy.
+- Data Collection: No, CD Valet does not collect data from this app for App Privacy nutrition label purposes.
+- Data Protections: Data Not Collected.
+- Contact Info / Email Address: No, because the optional profile email is stored locally on device and is not collected by TixPy.
+- User Content / Other User Content: No, because UPC/barcode lookup requests are transient service requests and are not retained or collected by TixPy.
 - Diagnostics: No, for App Privacy nutrition label purposes, because no analytics or crash-reporting SDK is configured to collect diagnostics from users.
 - Location: No.
 - Contacts: No.
@@ -33,6 +32,6 @@ Use these answers in App Store Connect App Privacy for the MVP build.
 ## Privacy URLs
 - Privacy Policy URL: https://tompinataro.github.io/CD-Valet/privacy/
 - Support URL: https://tompinataro.github.io/CD-Valet/support/
-- User Privacy Choices URL: leave blank unless ASC requires it; support/data deletion steps are on the Support URL.
+- User Privacy Choices URL: left blank; support/data deletion steps are on the Support URL.
 
-Before submitting, verify the two public URLs above are live and reachable without login.
+The App Privacy answer was published in App Store Connect on 2026-05-09 as Data Not Collected.

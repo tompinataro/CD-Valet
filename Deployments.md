@@ -8,8 +8,11 @@
 - Build number: `2`
 - App Store Connect app ID: `6767870190`
 - App Store Connect name: `CD Valet by TixPy`
-- App Store Connect status: Binary uploaded successfully; Apple processing is pending.
+- App Store Connect status: Submitted for App Review on 2026-05-09.
 - TestFlight URL: `https://appstoreconnect.apple.com/apps/6767870190/testflight/ios`
+- App Store review build: `1.0.0 (2)`
+- App Store pricing: Free, base territory USA.
+- App Privacy: Published as Data Not Collected.
 
 ## Android
 
@@ -23,3 +26,4 @@
 ## Notes
 
 - iOS bundle ID and App Store provisioning profile were created for `com.tixpy.cdvalet` using the existing Apple Distribution certificate.
+- App Store metadata, screenshots, support URL, privacy policy URL, review information, age rating, content rights, pricing, and build attachment were completed before review submission.
