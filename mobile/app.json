@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tixpy.cdvalet",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "CD Valet uses the camera to scan CD UPC barcodes so you can add albums to your personal music library, for example while cataloging your collection at home.",
         "ITSAppUsesNonExemptEncryption": false
