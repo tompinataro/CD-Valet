@@ -6,7 +6,10 @@
 - Artifact URL: `https://expo.dev/artifacts/eas/uSawwnfHwMe2Ejry5JFJfv.ipa`
 - Version: `1.0.0`
 - Build number: `2`
-- App Store Connect status: Build generated; submission is blocked until the CD Valet app record exists in ASC and `ascAppId` is added to `mobile/eas.json`.
+- App Store Connect app ID: `6767870190`
+- App Store Connect name: `CD Valet by TixPy`
+- App Store Connect status: Binary uploaded successfully; Apple processing is pending.
+- TestFlight URL: `https://appstoreconnect.apple.com/apps/6767870190/testflight/ios`
 
 ## Android
 
