@@ -6,8 +6,8 @@ import { confirmExitWithBackupReminder } from '../src/exitReminder';
 
 const CD_VALET_LOGO = require('../assets/icon.png');
 
-export default function IndexScreen() {
-  const { ready, session, startupError } = useAuth();
+export default function WelcomeScreen() {
+  const { startupError } = useAuth();
 
   return (
     <View style={styles.container}>
@@ -15,36 +15,20 @@ export default function IndexScreen() {
       <Text style={styles.h1}>{'Welcome to\nyour custom\nCD Library.\nYour very own\nTixpy app!'}</Text>
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Ready to start</Text>
-        <Text style={styles.statusLine}>
-          {ready ? 'Local startup finished.' : 'Preparing local library in the background...'}
-        </Text>
         {startupError ? <Text style={styles.errorText}>{startupError}</Text> : null}
-        <Text style={styles.emptyHeadline}>Scan your first CD</Text>
-        <Text style={styles.emptyCopy}>
-          No account or invitation is required. Open the scanner and start building your personal music collection right away.
-        </Text>
-
         <View style={styles.actionRow}>
           <Link href="/(tabs)/scan" asChild>
             <Pressable style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>{session ? 'Continue scanning' : 'Scan your CDs now'}</Text>
+              <Text style={styles.primaryButtonText}>Scan CDs</Text>
             </Pressable>
           </Link>
 
           <Link href="/(tabs)/library" asChild>
             <Pressable style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>Open library</Text>
+              <Text style={styles.secondaryButtonText}>Open Library</Text>
             </Pressable>
           </Link>
 
-          {!session ? (
-            <Link href="/sign-in" asChild>
-              <Pressable style={styles.tertiaryButton}>
-                <Text style={styles.tertiaryButtonText}>Save an optional local profile</Text>
-              </Pressable>
-            </Link>
-          ) : null}
           <Pressable onPress={confirmExitWithBackupReminder} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Exit</Text>
           </Pressable>
@@ -65,13 +49,13 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: 132,
     height: 132,
-    marginBottom: 38,
+    marginBottom: 58,
   },
   h1: {
     color: 'white',
     fontSize: 32,
     fontWeight: '800',
-    marginBottom: 28,
+    marginBottom: 38,
     textAlign: 'center',
   },
   card: {
@@ -81,90 +65,64 @@ const styles = StyleSheet.create({
     padding: 18,
     backgroundColor: '#12121a',
   },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  statusLine: {
-    color: '#c9c9d1',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 10,
-  },
   errorText: {
     color: '#ff9a9a',
     fontSize: 13,
     lineHeight: 19,
     marginBottom: 12,
   },
-  emptyHeadline: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: 10,
-  },
-  emptyCopy: {
-    color: '#c9c9d1',
-    fontSize: 14,
-    lineHeight: 21,
-    marginBottom: 18,
-  },
   actionRow: {
-    gap: 12,
+    alignItems: 'center',
+    gap: 20,
   },
   primaryButton: {
-    backgroundColor: '#5f162d',
+    alignSelf: 'center',
+    backgroundColor: '#9f3654',
     borderRadius: 14,
     paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 28,
+    minWidth: 150,
     alignItems: 'center',
   },
   primaryButtonText: {
     color: 'white',
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '800',
     textAlign: 'center',
   },
   secondaryButton: {
+    alignSelf: 'center',
     borderWidth: 1,
-    borderColor: '#2d2d3e',
+    borderColor: '#8b2b45',
     borderRadius: 14,
     paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 28,
+    minWidth: 150,
     alignItems: 'center',
-    backgroundColor: '#171722',
+    backgroundColor: '#762038',
   },
   secondaryButtonText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  tertiaryButton: {
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  tertiaryButtonText: {
-    color: '#f7e7b1',
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
   exitButton: {
+    alignSelf: 'center',
     borderWidth: 1,
     borderColor: '#78223c',
     borderRadius: 14,
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 28,
+    minWidth: 150,
     backgroundColor: '#5f162d',
   },
   exitButtonText: {
     color: 'white',
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.8,
     textAlign: 'center',
   },
 });

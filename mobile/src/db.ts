@@ -243,6 +243,15 @@ export async function listCdLibraryItems(): Promise<CdLibraryItem[]> {
   return rows;
 }
 
+export async function deleteCdLibraryItem(upcRaw: string) {
+  const upc = upcRaw.trim();
+  if (!upc) return;
+
+  const db = await getDb();
+  await db.runAsync(`DELETE FROM cd_library WHERE upc = ?;`, [upc]);
+  await db.runAsync(`DELETE FROM upc_queue WHERE upc = ?;`, [upc]);
+}
+
 export async function countCdLibraryItems(): Promise<number> {
   const db = await getDb();
   const row = await db.getFirstAsync<{ count: number }>(

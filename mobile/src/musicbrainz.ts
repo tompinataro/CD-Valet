@@ -25,6 +25,17 @@ type MusicBrainzRelease = {
   media?: Array<{ format?: string; 'track-count'?: number; tracks?: unknown[] }>;
 };
 
+const LOOKUP_TIMEOUT_MS = 6500;
+
+function withLookupTimeout(ms: number) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ms);
+  return {
+    signal: controller.signal,
+    cancel: () => clearTimeout(timeoutId),
+  };
+}
+
 function clean(value: unknown) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -64,13 +75,14 @@ export async function lookupCdByBarcode(upc: string): Promise<CdLookupResult> {
   const query = encodeURIComponent(`barcode:${upc.trim()}`);
   const url = `https://musicbrainz.org/ws/2/release/?query=${query}&fmt=json&limit=1`;
   const headers: Record<string, string> = { Accept: 'application/json' };
+  const timeout = withLookupTimeout(LOOKUP_TIMEOUT_MS);
 
   if (Platform.OS !== 'web') {
     headers['User-Agent'] = 'CDValet/1.0.0 (https://tixpy.com)';
   }
 
   try {
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, { headers, signal: timeout.signal });
     if (!response.ok) {
       return { kind: 'error', message: `MusicBrainz lookup failed (${response.status})` };
     }
@@ -95,5 +107,7 @@ export async function lookupCdByBarcode(upc: string): Promise<CdLookupResult> {
     };
   } catch (error: any) {
     return { kind: 'error', message: String(error?.message || error) };
+  } finally {
+    timeout.cancel();
   }
 }

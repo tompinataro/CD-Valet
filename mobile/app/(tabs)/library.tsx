@@ -1,7 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  Alert,
+  Animated,
   FlatList,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,7 +14,7 @@ import {
 } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
 
-import { createManualCd, updateCdDetails, type CdLibraryItem } from '../../src/db';
+import { createManualCd, deleteCdLibraryItem, updateCdDetails, type CdLibraryItem } from '../../src/db';
 import { useCdLibrary } from '../../src/hooks/useCdLibrary';
 
 const SAMPLE_CDS = [
@@ -127,6 +130,25 @@ export default function LibraryScreen() {
       refresh();
     }, [])
   );
+
+  function confirmDelete(item: CdLibraryItem) {
+    const name = item.album_title || item.artist || `UPC ${item.upc}`;
+    Alert.alert(
+      'Delete CD?',
+      `Remove ${name} from your CD library?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void deleteCdLibraryItem(item.upc).then(refresh);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  }
 
   function openEditor(item: CdLibraryItem) {
     setEditingItem(item);
@@ -345,30 +367,12 @@ export default function LibraryScreen() {
         keyExtractor={(it) => it.upc}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => {
-          const title = item.album_title || 'Unidentified CD';
-          const artist = item.artist || 'Tap to add artist';
-
           return (
-            <Pressable onPress={() => openEditor(item)} style={styles.row}>
-              <View style={styles.rowTop}>
-                <View style={styles.formatBadge}>
-                  <Text style={styles.formatBadgeText}>{item.format || 'CD'}</Text>
-                </View>
-                <View style={[styles.lookupBadge, needsDetails(item) && styles.lookupBadgeWarn]}>
-                  <Text style={styles.lookupBadgeText}>{lookupLabel(item.lookup_status)}</Text>
-                </View>
-                <Text style={styles.meta}>last scanned: {item.last_scanned_at.slice(0, 19).replace('T', ' ')}</Text>
-              </View>
-              <Text style={styles.albumTitle}>{title}</Text>
-              <Text style={styles.artist}>{artist}</Text>
-              {item.release_year || item.label || item.track_count ? (
-                <Text style={styles.releaseMeta}>
-                  {[item.release_year, item.label, item.track_count ? `${item.track_count} tracks` : null].filter(Boolean).join(' · ')}
-                </Text>
-              ) : null}
-              <Text style={styles.upc}>{item.upc.startsWith('manual-') ? 'Manual entry' : `UPC ${item.upc}`}</Text>
-              {item.notes ? <Text style={styles.notes}>{item.notes}</Text> : null}
-            </Pressable>
+            <LibraryRow
+              item={item}
+              onDelete={() => confirmDelete(item)}
+              onPress={() => openEditor(item)}
+            />
           );
         }}
         ListEmptyComponent={
@@ -410,6 +414,83 @@ export default function LibraryScreen() {
           )
         }
       />
+    </View>
+  );
+}
+
+function LibraryRow({
+  item,
+  onDelete,
+  onPress,
+}: {
+  item: CdLibraryItem;
+  onDelete: () => void;
+  onPress: () => void;
+}) {
+  const translateX = useMemo(() => new Animated.Value(0), []);
+  const title = item.album_title || 'Unidentified CD';
+  const artist = item.artist || 'Tap to add artist';
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onPanResponderMove: (_, gesture) => {
+          const nextValue = Math.max(-96, Math.min(0, gesture.dx));
+          translateX.setValue(nextValue);
+        },
+        onPanResponderRelease: (_, gesture) => {
+          Animated.spring(translateX, {
+            toValue: gesture.dx < -56 ? -96 : 0,
+            useNativeDriver: true,
+          }).start();
+        },
+      }),
+    [translateX]
+  );
+
+  function closeAndDelete() {
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+    }).start(onDelete);
+  }
+
+  return (
+    <View style={styles.swipeRow}>
+      <Pressable onPress={closeAndDelete} style={styles.deleteRail}>
+        <Text style={styles.deleteText}>Delete</Text>
+      </Pressable>
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.row,
+          {
+            transform: [{ translateX }],
+          },
+        ]}
+      >
+        <Pressable onPress={onPress}>
+          <View style={styles.rowTop}>
+            <View style={styles.formatBadge}>
+              <Text style={styles.formatBadgeText}>{item.format || 'CD'}</Text>
+            </View>
+            <View style={[styles.lookupBadge, needsDetails(item) && styles.lookupBadgeWarn]}>
+              <Text style={styles.lookupBadgeText}>{lookupLabel(item.lookup_status)}</Text>
+            </View>
+            <Text style={styles.meta}>last scanned: {item.last_scanned_at.slice(0, 19).replace('T', ' ')}</Text>
+          </View>
+          <Text style={styles.albumTitle}>{title}</Text>
+          <Text style={styles.artist}>{artist}</Text>
+          {item.release_year || item.label || item.track_count ? (
+            <Text style={styles.releaseMeta}>
+              {[item.release_year, item.label, item.track_count ? `${item.track_count} tracks` : null].filter(Boolean).join(' · ')}
+            </Text>
+          ) : null}
+          <Text style={styles.upc}>{item.upc.startsWith('manual-') ? 'Manual entry' : `UPC ${item.upc}`}</Text>
+          {item.notes ? <Text style={styles.notes}>{item.notes}</Text> : null}
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -627,6 +708,22 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 24,
     flexGrow: 1,
+  },
+  swipeRow: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  deleteRail: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    backgroundColor: '#7f1d1d',
+    paddingRight: 20,
+  },
+  deleteText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '800',
   },
   row: {
     borderWidth: 1,
