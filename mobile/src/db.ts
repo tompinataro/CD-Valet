@@ -51,6 +51,51 @@ export type AuthSession = {
 };
 
 const DB_NAME = 'cd_valet.db';
+const STARTER_CDS_SEEDED_FLAG = 'starter_cds_seeded';
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const STARTER_CDS = [
+  {
+    upc: '074646492325',
+    artist: 'Miles Davis',
+    albumTitle: 'Kind of Blue',
+    releaseYear: '1959',
+    label: 'Columbia',
+    catalogNumber: 'CK 64935',
+    trackCount: 5,
+    offsetDays: 1,
+  },
+  {
+    upc: '094638246824',
+    artist: 'The Beatles',
+    albumTitle: 'Abbey Road',
+    releaseYear: '1969',
+    label: 'Apple Records',
+    catalogNumber: '0946 3 82468 2 4',
+    trackCount: 17,
+    offsetDays: 2,
+  },
+  {
+    upc: '075678159624',
+    artist: 'Fleetwood Mac',
+    albumTitle: 'Rumours',
+    releaseYear: '1977',
+    label: 'Warner Bros.',
+    catalogNumber: '3010-2',
+    trackCount: 11,
+    offsetDays: 3,
+  },
+  {
+    upc: '075992725526',
+    artist: 'Prince and The Revolution',
+    albumTitle: 'Purple Rain',
+    releaseYear: '1984',
+    label: 'Warner Bros.',
+    catalogNumber: '25110-2',
+    trackCount: 9,
+    offsetDays: 4,
+  },
+];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
@@ -96,11 +141,16 @@ export async function ensureSchema() {
       name TEXT NOT NULL,
       signed_in_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS app_flags (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
     INSERT OR IGNORE INTO cd_library (upc, first_scanned_at, last_scanned_at)
     SELECT upc, first_scanned_at, last_scanned_at
     FROM upc_queue;
   `);
   await ensureCdLibraryColumns(db);
+  await seedStarterCds(db);
 }
 
 async function ensureCdLibraryColumns(db: SQLite.SQLiteDatabase) {
@@ -121,6 +171,56 @@ async function ensureCdLibraryColumns(db: SQLite.SQLiteDatabase) {
       await db.execAsync(sql);
     }
   }
+}
+
+async function setAppFlag(db: SQLite.SQLiteDatabase, key: string, value = 'true') {
+  await db.runAsync(
+    `INSERT INTO app_flags (key, value)
+     VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value;`,
+    [key, value]
+  );
+}
+
+async function seedStarterCds(db: SQLite.SQLiteDatabase) {
+  const seeded = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_flags WHERE key = ?;`,
+    [STARTER_CDS_SEEDED_FLAG]
+  );
+  if (seeded) return;
+
+  const row = await db.getFirstAsync<{ count: number }>(`SELECT COUNT(*) as count FROM cd_library;`);
+  if ((row?.count ?? 0) > 0) {
+    await setAppFlag(db, STARTER_CDS_SEEDED_FLAG);
+    return;
+  }
+
+  const now = Date.now();
+  for (const cd of STARTER_CDS) {
+    const scannedAt = new Date(now - cd.offsetDays * DAY_MS).toISOString();
+    await db.runAsync(
+      `INSERT OR IGNORE INTO cd_library (
+        upc, artist, album_title, format, release_year, label, catalog_number,
+        track_count, musicbrainz_id, lookup_status, lookup_source, notes,
+        first_scanned_at, last_scanned_at
+      )
+      VALUES (?, ?, ?, 'CD', ?, ?, ?, ?, NULL, 'found', 'cd-valet-starter', ?, ?, ?);`,
+      [
+        cd.upc,
+        cd.artist,
+        cd.albumTitle,
+        cd.releaseYear,
+        cd.label,
+        cd.catalogNumber,
+        cd.trackCount,
+        'Starter data for export and delete testing.',
+        scannedAt,
+        scannedAt,
+      ]
+    );
+  }
+
+  await setAppFlag(db, STARTER_CDS_SEEDED_FLAG);
 }
 
 export async function upsertScannedCd(upcRaw: string) {
